@@ -1,0 +1,298 @@
+<style>
+.scroll-view {
+  display: block;
+  width: calc(100% - 60rpx);
+  height: 100%;
+  padding-left: 30rpx;
+  padding-right: 30rpx;
+}
+.scroll-container {
+  display: flex;
+  flex-flow: row wrap;
+  align-content: flex-start;
+}
+.item-container {
+  box-sizing: border-box;
+  padding-bottom: 30rpx;
+  width: 50%;
+  height: 50vw;
+}
+.item-container-left {
+  padding-right: 15rpx;
+}
+.item-container-right {
+  padding-left: 15rpx;
+}
+.item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 20rpx;
+  border-radius: 10rpx;
+  box-shadow: 0px 0rpx 6rpx #dae1e4;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 60rpx;
+  font-weight: bold;
+  color: white;
+}
+.title-not-limit-lines {
+  display: -webkit-box;
+  font-size: 60rpx;
+  font-weight: bold;
+  color: white;
+}
+.sub-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 30rpx;
+  color: white;
+}
+.cross-lines {
+  display: flex;
+  flex-flow: row wrap;
+  align-content: flex-start;
+}
+.cross-line {
+  border-radius: 6rpx;
+  box-sizing: border-box;
+  margin-right: 6rpx;
+  margin-top: 6rpx;
+  font-size: 28rpx;
+  line-height: 36rpx;
+  padding: 0 8rpx;
+  min-width: 40rpx;
+  text-align: center;
+  color: white;
+}
+.change-lines-page {
+  color: #707070;
+  font-size: 26rpx;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+.img-change-lines-page {
+  width: 26rpx;
+  height: 26rpx;
+  margin-left: 6rpx;
+  padding: 30rpx 0;
+}
+</style>
+<template>
+  <view wx:if='{{canRender}}' class='scroll-view'>
+    <picker bindchange="changeArea" value="{{index}}" range="{{cityList}}" range-key="city">
+      <view class='change-lines-page'>
+        <text>{{cityList[cityIndex].city}}</text>
+        <image class='img-change-lines-page' src='/res/ic_arrow.png'></image>
+      </view>
+    </picker>
+    <view class='scroll-container'>
+      <block wx:for='{{lines}}' wx:key='index' wx:for-item='line'>
+        <view class="item-container {{index % 2 === 0 ? 'item-container-left' : 'item-container-right'}}">
+          <block wx:if="{{from === 'gaode'}}">
+            <view class='item' style="background-color:#{{line.cl}};" @tap='onItemClick({{line}})'>
+              <view>
+                <text class='title'>{{line.ln}}</text>
+                <text class='sub-title'>{{line.la}}</text>
+              </view>
+              <view class='cross-lines'>
+                <block wx:for='{{line.crossLines}}' wx:key='index'>
+                  <text wx:if='{{line.cl !== item.color}}' class='cross-line' style="background-color:#{{item.color}};">{{item.kn}}</text>
+                </block>
+              </view>
+            </view>
+          </block>
+          <block wx:else>
+            <view class='item' style='background-color:{{line.l_xmlattr.lc}};' @tap='onItemClick({{line}})'>
+              <text class='title-not-limit-lines'>{{line.l_xmlattr.lid}}</text>
+            </view>
+          </block>
+        </view>
+      </block>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api'
+import cities from '@/utils/cities'
+
+export default class Lines extends wepy.page {
+  config = {
+    navigationBarTitleText: '地铁路线小助手',
+    enablePullDownRefresh: false,
+    backgroundTextStyle: 'dark',
+    backgroundColor: '#ebf3f7'
+  }
+
+  data = {
+    canRender: false,
+    lines: [],
+    cityList: cities.getList(),
+    cityIndex: 3, // default guangzhou
+    from: 'gaode'
+  }
+
+  watch = {
+    cityIndex(newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.reqLines()
+      }
+    }
+  }
+
+  methods = {
+    onItemClick(item) {
+      this.$navigate('/pages/line-detail', {
+        from: this.from,
+        line: encodeURIComponent(JSON.stringify(item))
+      })
+    },
+    changeArea(event) {
+      this.cityIndex = event.detail.value
+    }
+  }
+
+  onShareAppMessage(res) {
+    return {
+      title: '地铁路线小助手，您的出行小帮手~',
+      path: `pages/lines?cityIndex=${this.cityIndex}`
+    }
+  }
+
+  onLoad(options) {
+    if (options.cityIndex) {
+      this.cityIndex = options.cityIndex
+    }
+    this.reqLines()
+  }
+
+  async reqLines() {
+    wx.showLoading({
+      title: '加载中...'
+    })
+    let city = this.cityList[this.cityIndex]
+    if (city.name !== undefined) {
+      this.from = 'gaode'
+      this.lines = this.processGaodeData(await api.reqLinesViaGaode(city.code, city.name),
+        await api.reqSchedulesViaGaode(city.code, city.name))
+    } else {
+      this.from = 'baidu'
+      this.lines = this.processBaiduData(await api.reqLinesViaBaidu(city.code))
+    }
+    this.canRender = true
+    this.$apply()
+    wx.hideLoading()
+  }
+
+  processGaodeData(lines, schedules) {
+    lines.forEach(line => {
+      // handle schedule
+      schedules.forEach(lineSchedules => {
+        if (lineSchedules.ls === line.ls) {
+          lineSchedules.st.forEach(stepSchedules => {
+            let validList = stepSchedules.d.filter(schedule => {
+              return schedule.ft !== '--:--' && schedule.lt !== '--:--'
+            })
+            if (validList.length !== 0) {
+              let sched = []
+              validList.forEach(schedule => {
+                let targetLine = lines.find(element => {
+                  return element.ls === schedule.ls
+                })
+                if (targetLine) {
+                  let endStep = targetLine.st.find(element => {
+                    return element.si === schedule.n
+                  })
+                  if (endStep) {
+                    let child = {
+                      firstTime: schedule.ft,
+                      lastTime: schedule.lt,
+                      endStep: endStep.n
+                    }
+                    let index = sched.findIndex(element => {
+                      return element['lineId'] === schedule.ls
+                    })
+                    if (index === -1) {
+                      sched.push({
+                        lineId: schedule.ls,
+                        lineName: targetLine.kn,
+                        color: targetLine.cl,
+                        arr: [child]
+                      })
+                    } else {
+                      sched[index].arr.push(child)
+                    }
+                    let step = line.st.find(step => {
+                      return step.si === stepSchedules.si
+                    })
+                    if (step) {
+                      step.schedule = sched
+                    }
+                  }
+                }
+              })
+            }
+          })
+        }
+      })
+
+      // handle cross line
+      let crossLines = []
+      line.st.forEach(step => {
+        let stepCrossingLines = []
+        step.r.split('|').forEach(lineId => {
+          lines.forEach(_line => {
+            if (line.ls !== _line.ls && lineId === _line.ls) {
+              let lns = stepCrossingLines.map(item => { return item.ln })
+              if (!lns.includes(_line.ln)) {
+                stepCrossingLines.push({ ln: _line.ln, color: _line.cl })
+              }
+
+              let kn = parseInt(_line.kn.replace(/[^0-9]/ig, ''))
+              if (isNaN(kn)) {
+                if (_line.kn.indexOf('轨道交通浦江线') !== -1) {
+                  kn = '浦江线'
+                } else {
+                  kn = _line.kn
+                }
+              }
+              let kns = crossLines.map(item => { return item.kn })
+              if (!kns.includes(kn)) {
+                crossLines.push({ kn: kn, color: _line.cl })
+              }
+            }
+          })
+          step.stepCrossingLines = stepCrossingLines.sort()
+        })
+      })
+      line.crossLines = crossLines.sort()
+    })
+    return lines
+  }
+
+  processBaiduData(lines) {
+    lines.forEach(line => {
+      line.l_xmlattr.lc = line.l_xmlattr.lc.toLowerCase().replace('0x', '#')
+    })
+    return lines
+  }
+}
+</script>

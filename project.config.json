@@ -1,0 +1,50 @@
+{
+  "description": "metro project",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "postcss": false,
+    "minified": true,
+    "newFeature": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "uglifyFileName": true
+  },
+  "compileType": "miniprogram",
+  "appid": "wxappid",
+  "projectname": "metro",
+  "miniprogramRoot": "dist/",
+  "libVersion": "2.4.3",
+  "simulatorType": "wechat",
+  "simulatorPluginLibVersion": {},
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "share",
+          "pathName": "pages/index",
+          "query": "latitude=39.90960456049752&longitude=116.3972282409668",
+          "scene": "1008"
+        },
+        {
+          "name": "share_city",
+          "pathName": "pages/lines",
+          "query": "cityIndex=2",
+          "scene": "1011"
+        }
+      ]
+    }
+  },
+  "srcMiniprogramRoot": "dist/",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  }
+}

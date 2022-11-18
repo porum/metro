@@ -1,0 +1,143 @@
+<style>
+.schedule-root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.schedule-dialog-container {
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  background-color: #008cd6;
+  display: flex;
+  flex-direction: column;
+  margin-left: 20px;
+  margin-right: 20px;
+  padding: 12rpx;
+  width: 100%;
+}
+.schedule-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.schedule-dialog-close {
+  width: 50rpx;
+  height: 50rpx;
+}
+.schedule-scroll-view {
+  width: 100%;
+  max-height: 700rpx;
+  margin-top: 10rpx;
+  border-radius: 4rpx;
+  background-color: white;
+}
+.schedule-content {
+  padding: 20rpx;
+}
+.schedule-line-name {
+  margin-top: 15rpx;
+  margin-left: 5rpx;
+}
+.schedule-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.schedule-end-step {
+  margin-top: 5rpx;
+  margin-bottom: 5rpx;
+}
+.time-container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+.time-start {
+  flex: 1;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  background-color: #ce5039;
+  text-align: center;
+}
+.time-end {
+  flex: 1;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  background-color: #80b142;
+  text-align: center;
+}
+.white {
+  color: white;
+}
+.black {
+  color: black;
+}
+.font-weight-bold {
+  font-weight: bold;
+}
+.font-size-40 {
+  font-size: 40rpx;
+}
+.font-size-36 {
+  font-size: 36rpx;
+}
+.font-size-34 {
+  font-size: 34rpx;
+}
+.font-size-32 {
+  font-size: 32rpx;
+}
+</style>
+<template>
+  <view class='schedule-root' @tap='closeDialog' catchtouchmove='donothing'>
+    <view class='schedule-dialog-container' @tap.stop='donothing'>
+      <view class='schedule-title'>
+        <text class='white font-size-40'>{{stepData.n}}</text>
+        <image class='schedule-dialog-close' src='/res/ic_close.png' @tap='closeDialog'></image>
+      </view>
+      <scroll-view scroll-y class='schedule-scroll-view'>
+        <view class='schedule-content'>
+          <block wx:for='{{stepData.schedule}}' wx:key='index' wx:for-item='item'>
+            <text class='font-weight-bold schedule-line-name font-size-34' style='color:#{{item.color}};'>{{item.lineName}}</text>
+            <block wx:for='{{item.arr}}' wx:key='index' wx:for-item='schedule'>
+              <view class='schedule-item'>
+                <view class='schedule-end-step'>
+                  <text class='font-size-32'>开往 </text>
+                  <text class='black font-size-32 font-weight-bold'>{{schedule.endStep}}</text>
+                </view>
+                <view class='time-container'>
+                  <view class='time-start'>
+                    <text class='white font-size-32'>首 {{schedule.firstTime}}</text>
+                  </view>
+                  <view class='time-end'>
+                    <text class='white font-size-32'>末 {{schedule.lastTime}}</text>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </block>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+export default class ScheduleDialog extends wepy.component {
+  props = {
+    stepData: {}
+  }
+
+  methods = {
+    closeDialog() {
+      this.$emit('dismiss')
+    },
+    donothing() {
+
+    }
+  }
+}
+</script>

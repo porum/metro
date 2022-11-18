@@ -1,0 +1,170 @@
+<style>
+.root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+.scroll {
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.item {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: center;
+  white-space: nowrap;
+}
+.item-left {
+  box-sizing: border-box;
+  padding-left: 30rpx;
+  padding-right: 30rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.item-vertical-line {
+  height: 20rpx;
+  width: 1px;
+}
+.item-circle {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.item-start-end-text {
+  font-size: 28rpx;
+  text-align: center;
+  color: white;
+  line-height: 28rpx;
+}
+.text-cross-line {
+  border-radius: 6rpx;
+  box-sizing: border-box;
+  padding: 4rpx 10rpx;
+  font-size: 28rpx;
+  line-height: 36rpx;
+  margin-left: 20rpx;
+  color: white;
+}
+.step {
+  display: inline-block;
+}
+.schedule-dialog {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+</style>
+<template>
+  <view class='root'>
+    <view class='scroll'>
+      <block wx:if="{{from === 'gaode'}}">
+        <block wx:for='{{line.st}}' wx:key='index' wx:for-item='step'>
+          <view class='item' @tap='onItemClick({{step}})'>
+            <view class='item-left'>
+              <view class='item-vertical-line' style="background-color:{{index === 0 ? 'transparent' : '#'+line.cl}};" />
+              <view class='item-circle' style='background-color:#{{line.cl}};'>
+                <text wx:if='{{index === 0}}' class='item-start-end-text'>起</text>
+                <text wx:elif='{{index === line.st.length - 1}}' class='item-start-end-text'>终</text>
+                <text wx:else class='item-start-end-text'>{{index + 1}}</text>
+              </view>
+              <view class='item-vertical-line' style="background-color:{{index === line.st.length - 1 ? 'transparent' : '#'+line.cl}}" />
+            </view>
+            <text class='step'>{{step.n}}</text>
+            <block wx:for='{{step.stepCrossingLines}}' wx:key='index'>
+              <text class='text-cross-line' style="background-color:#{{item.color}}">{{item.ln}}</text>
+            </block>
+          </view>
+        </block>
+      </block>
+      <block wx:else>
+        <block wx:for='{{line.p}}' wx:key='index' wx:for-item='step'>
+          <view class='item'>
+            <view class='item-left'>
+              <view class='item-vertical-line' style="background-color:{{index === 0 ? 'transparent' : line.l_xmlattr.lc}};" />
+              <view class='item-circle' style='background-color:{{line.l_xmlattr.lc}};'>
+                <text wx:if='{{index === 0}}' class='item-start-end-text'>起</text>
+                <text wx:elif='{{index === line.p.length - 1}}' class='item-start-end-text'>终</text>
+                <text wx:else class='item-start-end-text'>{{index + 1}}</text>
+              </view>
+              <view class='item-vertical-line' style="background-color:{{index === line.p.length - 1 ? 'transparent' : line.l_xmlattr.lc}}" />
+            </view>
+            <text class='step'>{{step.p_xmlattr.sid}}</text>
+            <block wx:for='{{step.p_xmlattr.ln}}' wx:key='{{index}}'>
+              <text class='text-cross-line'>{{item}}</text>
+            </block>
+          </view>
+        </block>
+      </block>
+    </view>
+    <scheduleDialog wx:if='{{ isShowScheduleDialog }}' :stepData.sync='selectedStep' @dismiss.user='dismissScheduleDialog'
+      class='schedule-dialog'></scheduleDialog>
+  </view>
+</template>
+<script>
+import wepy from 'wepy'
+import scheduleDialog from '@/components/dialog-schedule'
+export default class LineDetail extends wepy.page {
+  components = {
+    scheduleDialog
+  }
+
+  data = {
+    from: 'gaode',
+    line: null,
+    isShowScheduleDialog: false,
+    selectedStep: null
+  }
+
+  methods = {
+    onItemClick(item) {
+      this.selectedStep = item
+      this.isShowScheduleDialog = true
+    },
+    dismissScheduleDialog() {
+      this.isShowScheduleDialog = false
+    }
+  }
+
+  onLoad(options) {
+    this.from = options.from
+    let line = JSON.parse(decodeURIComponent(options.line))
+    if (options.from === 'gaode') {
+      wx.setNavigationBarTitle({
+        title: line.ln
+      })
+      this.line = line
+    } else {
+      wx.setNavigationBarTitle({
+        title: line.l_xmlattr.lid
+      })
+      this.processBaiduData(line)
+    }
+  }
+
+  processBaiduData(line) {
+    line.p = line.p.filter(step => {
+      return step.p_xmlattr.sid !== undefined && step.p_xmlattr.sid !== null && step.p_xmlattr.sid !== ''
+    })
+    line.p.forEach(step => {
+      let stepCrossingLines = []
+      step.p_xmlattr.ln.split(',').forEach(element => {
+        let crossingLine = element.split('|')[1]
+        if (crossingLine !== line.l_xmlattr.lid) {
+          stepCrossingLines.push(crossingLine)
+        }
+      })
+      step.p_xmlattr.ln = stepCrossingLines
+    })
+    this.line = line
+  }
+}
+</script>
